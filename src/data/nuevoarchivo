@@ -1,0 +1,230 @@
+import numpy as np
+from keras.datasets import imdb
+from keras import models, layers, optimizers
+
+## Preparacion de nuestro dataset
+
+#descargamos los datos
+(train_data, train_labels), (test_data,test_labels) = imdb.load_data(num_words = 10000)
+
+#es una lista no tiene dimension alguna la cual no debe ser procesada por una red neuronal debe ser un tensor
+train_data.shape
+
+train_data[0]
+
+train_labels[0]
+
+word_index = imdb.get_word_index()
+
+word_index
+
+#invirtiendo pocisiones
+word_index = dict([(value,key) for (key,value) in word_index.items()])
+
+word_index
+
+#averiguar a que variable correcponde cada numero
+for _ in train_data[0]:
+     print(word_index.get(_ -3))
+
+#antes de crear mi set de datos debo tranformar mis datos en float a tensores
+#aqui se convierte los valores
+def vectorizar (sequences, dim=10000):
+  results = np.zeros((len(sequences),dim))
+  for i, sequences in enumerate(sequences):
+      results[i,sequences]=1
+  return results
+
+#a vectorizar le paso mis datos de entrenamiento
+x_train = vectorizar(train_data)
+x_test = vectorizar(test_data)
+
+
+x_train.shape
+#25000 reseñas y 10000 palabras
+
+x_train[90]
+
+#pasando y a arreglos y cambiarles el tipo de dato
+y_train = np.asarray(train_labels).astype('float32')
+y_test = np.asarray(test_labels).astype('float32')
+
+
+## Entrenamiento del modelo de clasificación binaria
+
+model = models.Sequential()
+#agregando capas densas al modelo
+#dense : numero de neuronas
+#input_shape = (10000) : valores de entrada
+model.add(layers.Dense(16, activation='relu', input_shape = (10000,)))
+model.add(layers.Dense(16, activation='relu'))
+# la ultima capa solo va a tener una neurona y solo me va a decir si es 0 o 1
+model.add(layers.Dense(1, activation='sigmoid'))
+
+#'rmsprop' : version mejorada del decenso al gradiente
+model.compile(optimizer = 'rmsprop',
+              loss='binary_crossentropy',
+              metrics = 'accuracy')
+
+#entrenamiento en este entrenamiento en redes se agrega una nueva variable que es la de varilacion
+# :10000 primeros 10000 de los 250000 mil
+x_val = x_train[:10000]
+partial_x_train = x_train[10000:]#lo que me queda de esos x_val
+
+y_val = y_train[:10000]
+partial_y_train = y_train[10000:]
+
+#entrenamiento
+history = model.fit(partial_x_train,partial_y_train,
+                    epochs=20, #iteraciones
+                    batch_size=512,#variables
+                    validation_data=(x_val,y_val))
+
+#ver los resultados de mi neurona
+import matplotlib.pyplot as plt
+history_dict = history.history
+loss_values = history_dict['loss']
+val_loss_values = history_dict['val_loss']
+
+epoch = range(1,len(loss_values)+1)
+plt.plot(epoch, loss_values,'o',label = 'training')
+plt.plot(epoch, val_loss_values,'--',label = 'training')
+plt.legend()
+plt.show()
+# el set de validacion color naranja no es tan eficiente porque se estanco y
+# y no volvio a bajar y eso se debe al overfiting
+
+model.evaluate(x_test,y_test)
+
+history_dict #me muestra el rendimiento
+
+## Regularización: Dropout
+
+# **** Modelo menor ***
+
+
+#RESOLVIENDO UN MODELO MENOS COMPLEJO MINIMIZANDO EL OVERFITING
+model2 = models.Sequential()
+#agregando capas densas al modelo
+#dense : numero de neuronas
+#input_shape = (10000) : valores de entrada
+model2.add(layers.Dense(4, activation='relu', input_shape = (10000,)))
+model2.add(layers.Dense(4, activation='relu'))
+# la ultima capa solo va a tener una neurona y solo me va a decir si es 0 o 1
+model2.add(layers.Dense(1, activation='sigmoid'))
+
+
+#COMPILACION
+#'rmsprop' : version mejorada del decenso al gradiente
+model2.compile(optimizer = 'rmsprop',
+              loss='binary_crossentropy',
+              metrics = 'accuracy')
+
+#RESULTADOS DEL entrenamiento
+history2 = model2.fit(partial_x_train,partial_y_train,
+                    epochs=20, #iteraciones
+                    batch_size=512,#variables
+                    validation_data=(x_val,y_val))
+
+#ver los resultados de mi neurona
+import matplotlib.pyplot as plt
+history_dict = history.history
+loss_values = history_dict['loss']
+val_loss_values_2 = history_dict['val_loss']
+val_loss_values_2 = history2.history['val_loss']
+
+epoch = range(1,len(loss_values)+1)
+plt.plot(epoch, val_loss_values_2,'o',label = 'training')
+plt.plot(epoch, val_loss_values,'--',label = 'training')
+plt.legend()
+plt.show()
+# el set de validacion color naranja no es tan eficiente porque se estanco y
+# y no volvio a bajar y eso se debe al overfiting
+
+from keras import regularizers
+
+
+# **** Regularizacion *****
+
+#RESOLVIENDO UN MODELO MENOS COMPLEJO MINIMIZANDO EL OVERFITING
+model3 = models.Sequential()
+#agregando capas densas al modelo
+#dense : numero de neuronas
+#input_shape = (10000) : valores de entrada
+model3.add(layers.Dense(16, activation='relu', input_shape = (10000,),
+                        kernel_regularizer=regularizers.l2(0.0001)))
+model3.add(layers.Dense(16, activation='relu',kernel_regularizer=regularizers.l2(0.0001)))
+# la ultima capa solo va a tener una neurona y solo me va a decir si es 0 o 1
+model3.add(layers.Dense(1, activation='sigmoid'))
+
+
+#COMPILACION
+#'rmsprop' : version mejorada del decenso al gradiente
+#evaluacion del error del modelo para optimizar la funsion de coste
+model3.compile(optimizer = 'rmsprop',
+              loss='binary_crossentropy',
+              metrics = 'accuracy')
+
+#RESULTADOS DEL entrenamiento
+history3 = model3.fit(partial_x_train,partial_y_train,
+                    epochs=20, #iteraciones
+                    batch_size=512,#variables
+                    validation_data=(x_val,y_val))
+
+#ver los resultados de mi neurona
+import matplotlib.pyplot as plt
+history_dict = history.history
+loss_values = history_dict['loss']
+val_loss_values_2 = history_dict['val_loss']
+val_loss_values_3 = history3.history['val_loss']
+
+epoch = range(1,len(loss_values)+1)
+plt.plot(epoch, val_loss_values_2,'o',label = 'regularizacion')
+plt.plot(epoch, val_loss_values,'--',label = 'original')
+plt.legend()
+plt.show()
+# el set de validacion color naranja no es tan eficiente porque se estanco y
+# y no volvio a bajar y eso se debe al overfiting
+
+#    **** dropout *****
+
+
+#RESOLVIENDO UN MODELO MENOS COMPLEJO MINIMIZANDO EL OVERFITING
+model4 = models.Sequential()
+#agregando capas densas al modelo
+#dense : numero de neuronas
+#input_shape = (10000) : valores de entrada
+model4.add(layers.Dense(4, activation='relu', input_shape = (10000,)))
+model4.add(layers.Dropout(0.5))
+model4.add(layers.Dense(4, activation='relu'))
+# la ultima capa solo va a tener una neurona y solo me va a decir si es 0 o 1
+model4.add(layers.Dropout(0.5))
+model4.add(layers.Dense(1, activation='sigmoid'))
+
+
+#COMPILACION
+#'rmsprop' : version mejorada del decenso al gradiente
+model4.compile(optimizer = 'rmsprop',
+              loss='binary_crossentropy',
+              metrics = 'accuracy')
+
+#RESULTADOS DEL entrenamiento
+history4 = model4.fit(partial_x_train,partial_y_train,
+                    epochs=20, #iteraciones
+                    batch_size=512,#variables
+                    validation_data=(x_val,y_val))
+
+#ver los resultados de mi neurona
+import matplotlib.pyplot as plt
+history_dict = history.history
+loss_values = history_dict['loss']
+val_loss_values= history_dict['val_loss']
+val_loss_values_4 = history3.history['val_loss']
+
+epoch = range(1,len(loss_values)+1)
+plt.plot(epoch, val_loss_values_4,'o',label = 'droput')
+plt.plot(epoch, val_loss_values,'--',label = 'original')
+plt.legend()
+plt.show()
+# el set de validacion color naranja no es tan eficiente porque se estanco y
+# y no volvio a bajar y eso se debe al overfiting
