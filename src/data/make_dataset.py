@@ -6,7 +6,6 @@ import pandas as pd
 import logging
 from pathlib import Path
 from dotenv import find_dotenv, load_dotenv
-#nuevas librerias a la rama master
 from sklearn.metrics import r2_score
 from scipy.stats import anderson
 import scipy.stats as stats
@@ -19,6 +18,19 @@ def main(input_filepath, output_filepath):
         cleaned data ready to be analyzed (saved in ../processed).
     """
   dataframe = pd.DataFrame()
+
+
+
+#copiamos y pegamos codigo
+@click.command()
+@click.argument('input_filepath', type=click.Path(exists=True))
+@click.argument('output_filepath', type=click.Path())
+def main(input_filepath, output_filepath):
+    """ Runs data processing scripts to turn raw data from (../raw) into
+        cleaned data ready to be analyzed (saved in ../processed).
+    """
+  dataframe = pd.DataFrame()
+
 
 
 if __name__ == '__main__':
