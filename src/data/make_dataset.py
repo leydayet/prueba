@@ -6,7 +6,10 @@ import pandas as pd
 import logging
 from pathlib import Path
 from dotenv import find_dotenv, load_dotenv
-
+#nuevas librerias a la rama master
+from sklearn.metrics import r2_score
+from scipy.stats import anderson
+import scipy.stats as stats
 
 @click.command()
 @click.argument('input_filepath', type=click.Path(exists=True))
